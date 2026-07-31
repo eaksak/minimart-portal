@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบงานดั่งใจมินิมาร์ท - Portal</title>
+    
+    <!-- ฟอนต์ Prompt จาก Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS สำหรับจัดโครงสร้าง Responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: '#0ea5e9',
+                        dark: '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f1f5f9;
+        }
+        /* เอฟเฟกต์ตอนนำเมาส์ไปชี้ที่ปุ่ม */
+        .portal-card {
+            transition: all 0.3s ease;
+        }
+        .portal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- ส่วนหัว (Header) -->
+    <header class="bg-dark text-white shadow-md py-6 px-8">
+        <div class="max-w-6xl mx-auto flex items-center gap-4">
+            <div class="w-12 h-12 bg-brand rounded-xl flex items-center justify-center text-2xl shadow-lg">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide">ระบบงานดั่งใจมินิมาร์ท</h1>
+                <p class="text-slate-400 text-sm mt-1">ศูนย์รวมระบบงานและแดชบอร์ด (Web Portal)</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- พื้นที่เนื้อหาหลัก (Main Content) -->
+    <main class="flex-1 max-w-6xl mx-auto w-full p-8">
+        
+        <!-- หมวดหมู่ที่ 1: หมวดจัดซื้อ -->
+        <section class="mb-10">
+            <h2 class="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 border-b border-slate-200 pb-2">
+                <i class="fa-solid fa-cart-shopping text-brand"></i> หมวดจัดซื้อ
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- 1. ใบสั่งซื้อวัตถุดิบ -->
+                <a href="https://www.cognitoforms.com/Sklbac/_%e0%b9%83%e0%b8%9a%e0%b8%aa%e0%b8%87%e0%b8%8b%e0%b8%ad%e0%b8%a7%e0%b8%95%e0%b8%96%e0%b8%94%e0%b8%9a" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">ใบสั่งซื้อวัตถุดิบ</h3>
+                    <p class="text-sm text-slate-500">ระบบฟอร์มสั่งซื้อวัตถุดิบ</p>
+                </a>
+
+                <!-- 2. ใบสั่งซื้อมินิมาร์ท -->
+                <a href="https://eaksak.github.io/order-menu/" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">ใบสั่งซื้อมินิมาร์ท</h3>
+                    <p class="text-sm text-slate-500">ระบบออเดอร์สินค้ามินิมาร์ท</p>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- หมวดหมู่ที่ 2: หมวดรายงานสรุปรายได้ค่าใช้จ่าย -->
+        <section class="mb-10">
+            <h2 class="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 border-b border-slate-200 pb-2">
+                <i class="fa-solid fa-chart-line text-emerald-500"></i> หมวดรายงานสรุปรายได้ค่าใช้จ่าย
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- 3. สรุปค่าใช้จ่าย Paypers -->
+                <a href="https://cost-report-dashboard.geniallybac.chatgpt.site/" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">สรุปค่าใช้จ่าย Paypers</h3>
+                    <p class="text-sm text-slate-500">แดชบอร์ดสรุปรายจ่ายภาพรวม</p>
+                </a>
+
+                <!-- 4. สรุปรายได้ Silom -->
+                <a href="silom-report.html" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-cash-register"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">สรุปรายได้ Silom</h3>
+                    <p class="text-sm text-slate-500">Executive Dashboard จาก POS</p>
+                </a>
+
+            </div>
+        </section>
+        
+        <!-- หมวดหมู่ที่ 3: หมวดร้านสามแม่ครัว -->
+        <section class="mb-10">
+            <h2 class="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2 border-b border-slate-200 pb-2">
+                <i class="fa-solid fa-utensils text-orange-500"></i> หมวดร้านสามแม่ครัว
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- 5. รับออร์เดอร์ -->
+                <a href="https://script.google.com/macros/s/AKfycbyjKt8-Bs7DdNIZ7m6goturPKO9mRMFQDUbjRYpHrqGnmGWxmny2CFzBUVc6auceXRD/exec?page=order" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">รับออร์เดอร์</h3>
+                    <p class="text-sm text-slate-500">ระบบจัดการคำสั่งซื้อ</p>
+                </a>
+
+                <!-- 6. รับเงิน (แคชเชียร์) -->
+                <a href="https://script.google.com/a/bac.ac.th/macros/s/AKfycbyjKt8-Bs7DdNIZ7m6goturPKO9mRMFQDUbjRYpHrqGnmGWxmny2CFzBUVc6auceXRD/exec?page=cashier&token=a2ad6a74d0f44478" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">แคชเชียร์</h3>
+                    <p class="text-sm text-slate-500">ระบบรับเงินและทอนเงิน</p>
+                </a>
+                
+                <!-- 7. ผู้จัดการร้าน -->
+                <a href="https://script.google.com/macros/s/AKfycbyjKt8-Bs7DdNIZ7m6goturPKO9mRMFQDUbjRYpHrqGnmGWxmny2CFzBUVc6auceXRD/exec?page=admin" target="_blank" class="portal-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center group cursor-pointer block">
+                    <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mb-4 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-1">ผู้จัดการร้าน</h3>
+                    <p class="text-sm text-slate-500">ระบบหลังบ้านและการจัดการ</p>
+                </a>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-slate-500 text-sm">
+        <p>&copy; ระบบจัดการภายใน ดั่งใจมินิมาร์ท</p>
+    </footer>
+
+</body>
+</html>
