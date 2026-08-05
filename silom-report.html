@@ -1900,9 +1900,12 @@
                     syncBtn.removeAttribute('disabled');
                     uploadBtn.removeAttribute('disabled');
                     
-                    if (result.data && result.data.length > 0) {
-                        rawSalesData = result.data;
-                        dateColumns = result.dateColumns || [];
+                    const salesArray = Array.isArray(result.data) ? result.data : (result.data ? result.data.data : []);
+                    const datesArray = result.dateColumns || (result.data ? result.data.dateColumns : []) || [];
+                    
+                    if (salesArray && salesArray.length > 0) {
+                        rawSalesData = salesArray;
+                        dateColumns = datesArray;
                         identifyDateColumns(rawSalesData);
                         processBtn.removeAttribute('disabled');
                         renderProcessedDatesList();
@@ -1936,18 +1939,22 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    rawSalesData = result.data;
-                    dateColumns = result.dateColumns || [];
+                    const salesArray = Array.isArray(result.data) ? result.data : (result.data ? result.data.data : []);
+                    const datesArray = result.dateColumns || (result.data ? result.data.dateColumns : []) || [];
+                    
+                    rawSalesData = salesArray;
+                    dateColumns = datesArray;
                     identifyDateColumns(rawSalesData);
                     
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> ซิงค์เสร็จสิ้น! ประมวลผลสำเร็จ ${result.filesProcessed.length} ไฟล์`;
+                    const filesCount = result.filesProcessed ? result.filesProcessed.length : 0;
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> ซิงค์เสร็จสิ้น! ประมวลผลสำเร็จ ${filesCount} ไฟล์`;
                     
                     if (rawSalesData.length > 0) {
                         document.getElementById('btn-process-drive').removeAttribute('disabled');
                     }
                     
                     renderProcessedDatesList();
-                    alert(`ซิงค์ข้อมูลสำเร็จ!\nประมวลผลไฟล์ใหม่: ${result.filesProcessed.length} ไฟล์\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
+                    alert(`ซิงค์ข้อมูลสำเร็จ!\nประมวลผลไฟล์ใหม่: ${filesCount} ไฟล์\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
                 } else {
                     statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ซิงค์ล้มเหลว: ${result.message}`;
                     alert(`ซิงค์ล้มเหลว: ${result.message}`);
@@ -2022,8 +2029,11 @@
                     const result = await response.json();
                     
                     if (result.status === 'success') {
-                        rawSalesData = result.data;
-                        dateColumns = result.dateColumns || [];
+                        const salesArray = Array.isArray(result.data) ? result.data : (result.data ? result.data.data : []);
+                        const datesArray = result.dateColumns || (result.data ? result.data.dateColumns : []) || [];
+                        
+                        rawSalesData = salesArray;
+                        dateColumns = datesArray;
                         identifyDateColumns(rawSalesData);
                         
                         alert(`อัปโหลดและซิงค์ข้อมูลสำเร็จ!\nไฟล์ยอดขายถูกบันทึกไปยัง Google Drive แล้ว`);
