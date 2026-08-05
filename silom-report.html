@@ -1176,9 +1176,15 @@
             return excludedStockCategoryNumbers.has(getCategoryNumber(category));
         }
 
-        // Date Parser รองรับ D/M/YYYY, DD/MM/YYYY และปี พ.ศ.
+        // Date Parser รองรับ D/M/YYYY, DD/MM/YYYY, ISO String และปี พ.ศ.
         function parseDateString(dateStr) {
-            const match = String(dateStr ?? '').trim().match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+            if (!dateStr) return null;
+            const strVal = String(dateStr).trim();
+            if (strVal.includes('T')) {
+                const d = new Date(strVal);
+                if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            }
+            const match = strVal.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
             if (!match) return null;
             const day = Number(match[1]);
             const month = Number(match[2]);
@@ -1192,6 +1198,25 @@
                 parsed.getDate() !== day
             ) return null;
             return parsed;
+        }
+
+        function getRowQtyForDate(row, colName) {
+            if (!row) return 0;
+            if (row[colName] !== undefined && row[colName] !== null && row[colName] !== '') {
+                return parseNumeric(row[colName]);
+            }
+            const targetDate = parseDateString(colName);
+            if (!targetDate) return 0;
+            for (const key in row) {
+                const keyDate = parseDateString(key);
+                if (keyDate && 
+                    keyDate.getFullYear() === targetDate.getFullYear() &&
+                    keyDate.getMonth() === targetDate.getMonth() &&
+                    keyDate.getDate() === targetDate.getDate()) {
+                    return parseNumeric(row[key]);
+                }
+            }
+            return 0;
         }
 
         function parseDateInput(value) {
@@ -1233,7 +1258,7 @@
                 endDate.setHours(23, 59, 59, 999);
             } else if (filterValue === 'month') {
                 startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                endDate.setHours(23, 59, 59, 999);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
             } else if (filterValue === 'custom') {
                 const startVal = document.getElementById('custom-start-date').value;
                 const endVal = document.getElementById('custom-end-date').value;
@@ -1261,11 +1286,11 @@
             });
             activeDateColumns = validCols;
 
-            // Calculate new totals
+            // Calculate new totals using robust date quantity extraction
             return rawSalesData.map(row => {
                 let newQty = 0;
                 validCols.forEach(col => {
-                    newQty += parseNumeric(row[col]);
+                    newQty += getRowQtyForDate(row, col);
                 });
                 const price = parseNumeric(row['ราคา/หน่วย']);
                 const newTotal = newQty * price;
