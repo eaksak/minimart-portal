@@ -270,6 +270,9 @@
             <button onclick="switchTab('category')" id="nav-category" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-layer-group w-5"></i> <span>ยอดขายตามหมวดหมู่</span>
             </button>
+            <button onclick="switchTab('trend')" id="nav-trend" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa-solid fa-chart-line w-5 text-indigo-400"></i> <span>สรุปยอดขายรายช่วงเวลา</span>
+            </button>
             <button onclick="switchTab('top10')" id="nav-top10" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-trophy w-5"></i> <span>Top 10 สินค้าขายดี</span>
             </button>
@@ -349,53 +352,142 @@
             </div>
 
             <!-- TAB 1: UPLOAD -->
-            <div id="tab-upload" class="tab-content active h-full flex flex-col items-center justify-center max-w-4xl mx-auto">
-                <div class="text-center mb-10">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-4">อัปโหลดไฟล์รายงานจาก Silom POS</h2>
-                    <p class="text-slate-500">แนบไฟล์ Excel (.xlsx) ที่ดาวน์โหลดจากระบบเพื่อสร้างแดชบอร์ดทันที</p>
+            <div id="tab-upload" class="tab-content active h-full flex flex-col justify-start max-w-4xl mx-auto pt-6 overflow-y-auto">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2">นำเข้าข้อมูลรายงานจาก Silom POS</h2>
+                    <p class="text-slate-500 text-sm">เลือกเชื่อมต่อผ่าน Google Drive เพื่อเก็บประวัติยอดขาย หรืออัปโหลดไฟล์ในเครื่องโดยตรง</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                    <!-- Sales File Upload -->
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
-                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                            <i class="fa-solid fa-file-invoice-dollar"></i>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">ไฟล์ยอดขายตามสินค้า</h3>
-                        <p class="text-sm text-slate-500 mb-6">ไฟล์สรุปจำนวนการขายสินค้า.xlsx</p>
-                        
-                        <input type="file" id="sales-file" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event, 'sales')">
-                        <button onclick="document.getElementById('sales-file').click()" class="w-full py-3 px-4 bg-blue-50 text-blue-600 font-medium rounded-xl hover:bg-blue-100 transition-colors border border-blue-200">
-                            เลือกไฟล์ยอดขาย
-                        </button>
-                        <div id="sales-status" class="mt-4 text-sm text-slate-400 hidden flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-circle-check text-green-500"></i> <span id="sales-filename" class="truncate max-w-[200px]"></span>
-                        </div>
-                    </div>
-
-                    <!-- Stock File Upload -->
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
-                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                            <i class="fa-solid fa-boxes-stacked"></i>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">ไฟล์สินค้าคงเหลือ</h3>
-                        <p class="text-sm text-slate-500 mb-6">ไฟล์สินค้าคงเหลือตามSKU.xlsx</p>
-                        
-                        <input type="file" id="stock-file" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event, 'stock')">
-                        <button onclick="document.getElementById('stock-file').click()" class="w-full py-3 px-4 bg-emerald-50 text-emerald-600 font-medium rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200">
-                            เลือกไฟล์สต็อก
-                        </button>
-                        <div id="stock-status" class="mt-4 text-sm text-slate-400 hidden flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-circle-check text-green-500"></i> <span id="stock-filename" class="truncate max-w-[200px]"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-12 w-full max-w-md">
-                    <button id="process-btn" onclick="processData()" class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0" disabled>
-                        สร้างรายงาน (Generate Dashboard)
+                <!-- Sub-tabs for Local vs Drive -->
+                <div class="flex border-b border-slate-200 mb-6 w-full justify-center">
+                    <button onclick="toggleImportMode('drive')" id="btn-import-drive" class="px-6 py-3 font-semibold text-sm border-b-2 border-primary text-primary transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-base"></i> เชื่อมต่อ Google Drive (แนะนำ)
                     </button>
-                    <p id="upload-error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+                    <button onclick="toggleImportMode('local')" id="btn-import-local" class="px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-laptop text-base"></i> อัปโหลดไฟล์จากเครื่อง (Local) ได้ครั้งละไฟล์
+                    </button>
+                </div>
+
+                <!-- Drive Mode Container -->
+                <div id="import-drive-container" class="w-full space-y-6">
+                    <!-- Config Box -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-gears text-primary"></i> ตั้งค่าการเชื่อมต่อ Google Apps Script Web App
+                        </h3>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="gas-url-input" placeholder="วาง URL ของ Apps Script Web App (https://script.google.com/...)" class="flex-1 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl p-3 focus:ring-primary focus:border-primary">
+                            <button onclick="saveGasUrl()" class="px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm whitespace-nowrap text-sm">
+                                <i class="fa-solid fa-save mr-1"></i> บันทึกการเชื่อมต่อ
+                            </button>
+                        </div>
+                        <div id="gas-connection-status" class="mt-3 text-xs text-slate-500 flex items-center gap-2">
+                            <i class="fa-solid fa-circle text-slate-300"></i> ยังไม่ได้ระบุ URL เชื่อมต่อ
+                        </div>
+                    </div>
+
+                    <!-- Sync Actions Box -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                        <!-- Direct File Upload to Drive -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
+                            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </div>
+                            <h3 class="text-base font-semibold mb-1">อัปโหลดไฟล์ยอดขายไปยัง Drive</h3>
+                            <p class="text-xs text-slate-500 mb-4">ส่งไฟล์รายงานสรุปจำนวนการขายสินค้าเข้า Drive และซิงค์ทันที</p>
+                            
+                            <input type="file" id="sales-drive-file" accept=".xlsx, .xls" class="hidden" onchange="uploadSalesToDrive(event)">
+                            <button id="btn-sales-drive" onclick="document.getElementById('sales-drive-file').click()" class="w-full py-2.5 px-4 bg-indigo-50 text-indigo-600 font-medium rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 text-sm disabled:opacity-50" disabled>
+                                เลือกและอัปโหลดยอดขาย
+                            </button>
+                            <div id="sales-drive-status" class="mt-2 text-xs text-slate-400 hidden flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-spinner fa-spin text-primary"></i> <span>กำลังอัปโหลดและประมวลผล...</span>
+                            </div>
+                        </div>
+
+                        <!-- Local Stock Upload -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
+                            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                            <h3 class="text-base font-semibold mb-1">ไฟล์สินค้าคงเหลือ (Local)</h3>
+                            <p class="text-xs text-slate-500 mb-4">รายงานสต็อกใช้นำเข้าโดยตรงจากเครื่อง (ไม่ต้องผ่าน Drive)</p>
+                            
+                            <input type="file" id="stock-drive-file" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event, 'stock')">
+                            <button onclick="document.getElementById('stock-drive-file').click()" class="w-full py-2.5 px-4 bg-emerald-50 text-emerald-600 font-medium rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200 text-sm">
+                                เลือกไฟล์สต็อกสินค้า
+                            </button>
+                            <div id="stock-status-info" class="mt-2 text-xs text-slate-400 hidden flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-circle-check text-green-500"></i> <span id="stock-filename-info" class="truncate max-w-[200px]"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-center pt-2">
+                        <button id="btn-sync-drive" onclick="syncWithDrive()" class="w-full sm:w-auto py-3 px-6 bg-slate-800 text-white font-bold rounded-xl shadow hover:bg-slate-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-rotate"></i> ซิงค์ยอดขายทั้งหมดจาก Google Drive
+                        </button>
+                        <button id="btn-process-drive" onclick="processDriveData()" class="w-full sm:w-auto py-3 px-8 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-chart-pie"></i> สร้างรายงาน (Generate Dashboard)
+                        </button>
+                    </div>
+
+                    <!-- List of Processed Dates -->
+                    <div id="processed-dates-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hidden">
+                        <h4 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-primary"></i> ข้อมูลรายงานยอดขายที่ซิงค์สำเร็จแล้ว
+                        </h4>
+                        <div id="processed-dates-list" class="flex flex-wrap gap-2">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Local Mode Container -->
+                <div id="import-local-container" class="w-full space-y-6 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                        <!-- Sales File Upload -->
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
+                            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">ไฟล์ยอดขายตามสินค้า</h3>
+                            <p class="text-sm text-slate-500 mb-6">ไฟล์สรุปจำนวนการขายสินค้า.xlsx</p>
+                            
+                            <input type="file" id="sales-file" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event, 'sales')">
+                            <button onclick="document.getElementById('sales-file').click()" class="w-full py-3 px-4 bg-blue-50 text-blue-600 font-medium rounded-xl hover:bg-blue-100 transition-colors border border-blue-200">
+                                เลือกไฟล์ยอดขาย
+                            </button>
+                            <div id="sales-status" class="mt-4 text-sm text-slate-400 hidden flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-circle-check text-green-500"></i> <span id="sales-filename" class="truncate max-w-[200px]"></span>
+                            </div>
+                        </div>
+
+                        <!-- Stock File Upload -->
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
+                            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold mb-2">ไฟล์สินค้าคงเหลือ</h3>
+                            <p class="text-sm text-slate-500 mb-6">ไฟล์สินค้าคงเหลือตามSKU.xlsx</p>
+                            
+                            <input type="file" id="stock-file" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event, 'stock')">
+                            <button onclick="document.getElementById('stock-file').click()" class="w-full py-3 px-4 bg-emerald-50 text-emerald-600 font-medium rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200">
+                                เลือกไฟล์สต็อก
+                            </button>
+                            <div id="stock-status" class="mt-4 text-sm text-slate-400 hidden flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-circle-check text-green-500"></i> <span id="stock-filename" class="truncate max-w-[200px]"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 w-full max-w-md mx-auto">
+                        <button id="process-btn" onclick="processData()" class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0" disabled>
+                            สร้างรายงาน (Generate Dashboard)
+                        </button>
+                        <p id="upload-error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+                    </div>
                 </div>
             </div>
 
@@ -489,6 +581,73 @@
                 </div>
             </div>
 
+            <!-- TAB 6: SALES TREND & PERIOD SUMMARY -->
+            <div id="tab-trend" class="tab-content report-tab max-w-7xl mx-auto">
+                <div class="all-reports-only report-section-heading">
+                    <h2>5. รายงานสรุปยอดขายรายช่วงเวลา</h2>
+                    <p>สรุปผลการดำเนินงานเปรียบเทียบตามช่วงเวลา วัน, สัปดาห์, เดือน และ ปี</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8 flex flex-wrap gap-4 items-end justify-between no-print">
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">สรุปรายช่วงเวลา</label>
+                            <div class="inline-flex rounded-md shadow-sm" role="group">
+                                <button type="button" onclick="setTrendInterval('day')" id="btn-trend-day" class="px-4 py-2 text-sm font-medium text-primary bg-slate-50 border border-primary rounded-l-lg focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors">
+                                    รายวัน
+                                </button>
+                                <button type="button" onclick="setTrendInterval('week')" id="btn-trend-week" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border-t border-b border-r border-slate-200 hover:bg-slate-50 hover:text-primary focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors">
+                                    รายสัปดาห์
+                                </button>
+                                <button type="button" onclick="setTrendInterval('month')" id="btn-trend-month" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border-t border-b border-r border-slate-200 hover:bg-slate-50 hover:text-primary focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors">
+                                    รายเดือน
+                                </button>
+                                <button type="button" onclick="setTrendInterval('year')" id="btn-trend-year" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border-t border-b border-r border-slate-200 rounded-r-lg hover:bg-slate-50 hover:text-primary focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors">
+                                    รายปี
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trend Chart & Table -->
+                <div class="grid grid-cols-1 gap-8">
+                    <!-- Chart Card -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold text-slate-800" id="trend-chart-title">กราฟแสดงแนวโน้มยอดขาย</h3>
+                        </div>
+                        <div class="relative w-full h-80 flex justify-center items-center">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Data Table Card -->
+                    <div class="report-table-card bg-white rounded-2xl p-0 shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-slate-800">ตารางข้อมูลสรุปเปรียบเทียบ</h3>
+                        </div>
+                        <div class="report-table-container overflow-x-auto flex-1">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4">ช่วงเวลา</th>
+                                        <th scope="col" class="px-6 py-4 text-right">จำนวนชิ้นที่ขายได้ (ชิ้น)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">ยอดขายรวม (บาท)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">ต้นทุนรวม (บาท)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">กำไรสุทธิ (บาท)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">อัตรากำไร (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trend-table-body">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB 3: TOP 10 PRODUCTS -->
             <div id="tab-top10" class="tab-content report-tab max-w-7xl mx-auto">
                 <div class="all-reports-only report-section-heading">
@@ -552,6 +711,7 @@
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6 no-print">
                     <div class="flex flex-col md:flex-row justify-between gap-6">
+                    <div class="flex flex-col md:flex-row justify-between gap-6">
                         <div class="flex-1">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-filter"></i> เลือกหมวดหมู่ที่ต้องการดู (สินค้าหมดคลัง)</h3>
                             <div class="text-xs text-slate-500 mb-2">* ไม่รวม non-stock และหมวดที่ขึ้นต้นด้วย 4, 7, 8, 9, 10 โดยอัตโนมัติ</div>
@@ -579,8 +739,6 @@
                         <i class="fa-solid fa-arrow-trend-down text-5xl text-rose-200"></i>
                     </div>
                 </div>
-
-                <!-- Table -->
                 <div class="report-table-card bg-white rounded-2xl p-0 shadow-sm border border-slate-100 overflow-hidden">
                     <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">รายการสินค้าหมดคลังและยอดคงเหลือติดลบ</h3>
@@ -665,7 +823,6 @@
                         </table>
                     </div>
                 </div>
-
             </div>
 
         </div>
@@ -684,9 +841,15 @@
         
         let categoryChartInstance = null;
         let top10ChartInstance = null;
+        let trendChartInstance = null;
+        let gasUrl = localStorage.getItem('silom_gas_url') || '';
+        let currentTrendInterval = 'day';
+        let activeImportMode = 'drive';
+        let activeDateColumns = [];
 
         const reportTitles = {
             category: 'รายงานยอดขายตามหมวดหมู่',
+            trend: 'สรุปยอดขายรายช่วงเวลา',
             top10: 'รายงาน 10 อันดับสินค้าขายดี',
             oos: 'รายงานสินค้าหมดคลังและยอดติดลบ',
             stock: 'รายงานสินค้าต่ำกว่าจุดสั่งซื้อ (Low Stock)'
@@ -825,7 +988,7 @@
                     document.getElementById('upload-error').classList.remove('hidden');
                     
                     document.getElementById(`${type}-status`).classList.add('hidden');
-                    document.getElementById('process-btn').setAttribute('disabled', 'true');
+                    checkBothFilesLoaded();
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -859,7 +1022,7 @@
 
         function checkBothFilesLoaded() {
             const btn = document.getElementById('process-btn');
-            if (rawSalesData.length > 0 && rawStockData.length > 0) {
+            if (rawSalesData.length > 0 || rawStockData.length > 0) {
                 btn.removeAttribute('disabled');
             } else {
                 btn.setAttribute('disabled', 'true');
@@ -887,7 +1050,7 @@
             document.getElementById('custom-date-container').classList.add('hidden');
             
             // Disable navs
-            ['nav-category', 'nav-top10', 'nav-oos', 'nav-stock'].forEach(id => {
+            ['nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'].forEach(id => {
                 document.getElementById(id).setAttribute('disabled', 'true');
             });
             
@@ -906,14 +1069,32 @@
             }
         }
 
+        function updateSidebarNavigationStates() {
+            if (rawSalesData.length > 0) {
+                document.getElementById('nav-category').removeAttribute('disabled');
+                document.getElementById('nav-trend').removeAttribute('disabled');
+                document.getElementById('nav-top10').removeAttribute('disabled');
+            } else {
+                document.getElementById('nav-category').setAttribute('disabled', 'true');
+                document.getElementById('nav-trend').setAttribute('disabled', 'true');
+                document.getElementById('nav-top10').setAttribute('disabled', 'true');
+            }
+
+            if (rawStockData.length > 0) {
+                document.getElementById('nav-oos').removeAttribute('disabled');
+                document.getElementById('nav-stock').removeAttribute('disabled');
+            } else {
+                document.getElementById('nav-oos').setAttribute('disabled', 'true');
+                document.getElementById('nav-stock').setAttribute('disabled', 'true');
+            }
+        }
+
         function processData() {
             document.getElementById('loading-overlay').classList.remove('hidden');
             
             setTimeout(() => {
-                // Enable navigation
-                ['nav-category', 'nav-top10', 'nav-oos', 'nav-stock'].forEach(id => {
-                    document.getElementById(id).removeAttribute('disabled');
-                });
+                // Enable navigation selectively
+                updateSidebarNavigationStates();
                 
                 // Initialize Filters
                 populateCategoryFilters();
@@ -922,7 +1103,13 @@
                 applyFilters();
                 
                 document.getElementById('loading-overlay').classList.add('hidden');
-                switchTab('category'); // Auto jump to category tab
+                
+                // Switch to category sales tab if available, else stock tab
+                if (rawSalesData.length > 0) {
+                    switchTab('category');
+                } else if (rawStockData.length > 0) {
+                    switchTab('oos');
+                }
             }, 500); // Simulate brief processing time for UX
         }
 
@@ -1013,6 +1200,7 @@
             const filterValue = document.getElementById('global-date-filter').value;
             
             if (filterValue === 'all') {
+                activeDateColumns = dateColumns;
                 // Return original mapped to standardize keys for rendering functions
                 return rawSalesData.map(row => ({
                     sku: row['รหัสสินค้า'],
@@ -1066,6 +1254,7 @@
                 if(!colDate) return false;
                 return colDate >= startDate && colDate <= endDate;
             });
+            activeDateColumns = validCols;
 
             // Calculate new totals
             return rawSalesData.map(row => {
@@ -1092,6 +1281,7 @@
             const activeData = getFilteredSalesData();
             renderCategoryTab(activeData);
             renderTop10(activeData); // Render Top 10 relies on this data too
+            renderTrendReport(activeData); // Render Period Summary Report
             // Stock tab doesn't rely on date filter typically, but we'll re-render to ensure consistency
             renderOOSAlert();
             renderStockAlert(); 
@@ -1617,6 +1807,7 @@
                     if (printAll) {
                         if (categoryChartInstance?.resize) categoryChartInstance.resize();
                         if (top10ChartInstance?.resize) top10ChartInstance.resize();
+                        if (trendChartInstance?.resize) trendChartInstance.resize();
                     }
                     requestAnimationFrame(() => window.print());
                 });
@@ -1642,6 +1833,414 @@
             document.body.classList.add('preparing-print');
         });
         window.addEventListener('afterprint', cleanupPrintMode);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initGas();
+        });
+        // --- GOOGLE DRIVE SYNC & PERIOD SUMMARY FUNCTIONS ---
+
+        function toggleImportMode(mode) {
+            activeImportMode = mode;
+            const btnDrive = document.getElementById('btn-import-drive');
+            const btnLocal = document.getElementById('btn-import-local');
+            const containerDrive = document.getElementById('import-drive-container');
+            const containerLocal = document.getElementById('import-local-container');
+            
+            if (mode === 'drive') {
+                btnDrive.className = "px-6 py-3 font-semibold text-sm border-b-2 border-primary text-primary transition-all flex items-center gap-2";
+                btnLocal.className = "px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2";
+                containerDrive.classList.remove('hidden');
+                containerLocal.classList.add('hidden');
+            } else {
+                btnLocal.className = "px-6 py-3 font-semibold text-sm border-b-2 border-primary text-primary transition-all flex items-center gap-2";
+                btnDrive.className = "px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all flex items-center gap-2";
+                containerLocal.classList.remove('hidden');
+                containerDrive.classList.add('hidden');
+            }
+        }
+
+        function saveGasUrl() {
+            const input = document.getElementById('gas-url-input');
+            const url = input.value.trim();
+            if (!url) {
+                alert("กรุณากรอก URL ของ Google Apps Script Web App");
+                return;
+            }
+            if (!url.startsWith("https://script.google.com/")) {
+                alert("รูปแบบ URL ไม่ถูกต้อง ต้องเริ่มต้นด้วย https://script.google.com/");
+                return;
+            }
+            localStorage.setItem('silom_gas_url', url);
+            gasUrl = url;
+            checkGasConnection();
+        }
+
+        async function checkGasConnection() {
+            const statusEl = document.getElementById('gas-connection-status');
+            const syncBtn = document.getElementById('btn-sync-drive');
+            const uploadBtn = document.getElementById('btn-sales-drive');
+            const processBtn = document.getElementById('btn-process-drive');
+            
+            if (!gasUrl) {
+                statusEl.innerHTML = `<i class="fa-solid fa-circle text-slate-300"></i> ยังไม่ได้ระบุ URL เชื่อมต่อ`;
+                syncBtn.setAttribute('disabled', 'true');
+                uploadBtn.setAttribute('disabled', 'true');
+                processBtn.setAttribute('disabled', 'true');
+                return;
+            }
+
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500"></i> กำลังตรวจสอบการเชื่อมต่อ...`;
+            
+            try {
+                const response = await fetch(gasUrl);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> เชื่อมต่อสำเร็จ! พร้อมใช้งาน`;
+                    syncBtn.removeAttribute('disabled');
+                    uploadBtn.removeAttribute('disabled');
+                    
+                    if (result.data && result.data.length > 0) {
+                        rawSalesData = result.data;
+                        dateColumns = result.dateColumns || [];
+                        identifyDateColumns(rawSalesData);
+                        processBtn.removeAttribute('disabled');
+                        renderProcessedDatesList();
+                    } else {
+                        statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> เชื่อมต่อสำเร็จ (ไม่มีข้อมูลใน Google Sheet)`;
+                    }
+                } else {
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ข้อผิดพลาดจากระบบ: ${result.message}`;
+                    syncBtn.setAttribute('disabled', 'true');
+                    uploadBtn.setAttribute('disabled', 'true');
+                    processBtn.setAttribute('disabled', 'true');
+                }
+            } catch (err) {
+                console.error("Connection failed", err);
+                statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> เชื่อมต่อไม่สำเร็จ: ตรวจสอบความถูกต้องของ URL หรือสิทธิ์การเข้าถึง (สิทธิ์ต้องเป็น Anyone)`;
+                syncBtn.setAttribute('disabled', 'true');
+                uploadBtn.setAttribute('disabled', 'true');
+                processBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        async function syncWithDrive() {
+            if (!gasUrl) return;
+            
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            const statusEl = document.getElementById('gas-connection-status');
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500"></i> กำลังซิงค์ข้อมูลจาก Google Drive...`;
+            
+            try {
+                const response = await fetch(`${gasUrl}?action=sync`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    rawSalesData = result.data;
+                    dateColumns = result.dateColumns || [];
+                    identifyDateColumns(rawSalesData);
+                    
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> ซิงค์เสร็จสิ้น! ประมวลผลสำเร็จ ${result.filesProcessed.length} ไฟล์`;
+                    
+                    if (rawSalesData.length > 0) {
+                        document.getElementById('btn-process-drive').removeAttribute('disabled');
+                    }
+                    
+                    renderProcessedDatesList();
+                    alert(`ซิงค์ข้อมูลสำเร็จ!\nประมวลผลไฟล์ใหม่: ${result.filesProcessed.length} ไฟล์\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
+                } else {
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ซิงค์ล้มเหลว: ${result.message}`;
+                    alert(`ซิงค์ล้มเหลว: ${result.message}`);
+                }
+            } catch (err) {
+                console.error("Sync failed", err);
+                statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> เกิดข้อผิดพลาดขณะซิงค์`;
+                alert("เกิดข้อผิดพลาดในการเรียก API: " + err.message);
+            } finally {
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+
+        function processDriveData() {
+            if (rawSalesData.length === 0) {
+                alert("กรุณาซิงค์ข้อมูลจาก Google Drive ก่อนสร้างรายงาน");
+                return;
+            }
+            
+            // Enable navigation selectively
+            updateSidebarNavigationStates();
+            
+            populateCategoryFilters();
+            applyFilters();
+            
+            switchTab('category');
+        }
+
+        function uploadSalesToDrive(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!gasUrl) {
+                alert("กรุณาบันทึก URL ของ Web App ก่อนอัปโหลด");
+                return;
+            }
+
+            const statusEl = document.getElementById('sales-drive-status');
+            statusEl.classList.remove('hidden');
+            document.getElementById('btn-sales-drive').setAttribute('disabled', 'true');
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const arrayBuffer = e.target.result;
+                    const base64Data = arrayBufferToBase64(arrayBuffer);
+                    
+                    const payload = {
+                        filename: file.name,
+                        base64Data: base64Data
+                    };
+                    
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        rawSalesData = result.data;
+                        dateColumns = result.dateColumns || [];
+                        identifyDateColumns(rawSalesData);
+                        
+                        alert(`อัปโหลดและซิงค์ข้อมูลสำเร็จ!\nไฟล์ยอดขายถูกบันทึกไปยัง Google Drive แล้ว`);
+                        document.getElementById('btn-process-drive').removeAttribute('disabled');
+                        renderProcessedDatesList();
+                    } else {
+                        alert(`อัปโหลดล้มเหลว: ${result.message}`);
+                    }
+                } catch (err) {
+                    console.error("Upload failed", err);
+                    alert("เกิดข้อผิดพลาดขณะอัปโหลด: " + err.message);
+                } finally {
+                    statusEl.classList.add('hidden');
+                    document.getElementById('btn-sales-drive').removeAttribute('disabled');
+                    document.getElementById('sales-drive-file').value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        function renderProcessedDatesList() {
+            const container = document.getElementById('processed-dates-card');
+            const listEl = document.getElementById('processed-dates-list');
+            listEl.innerHTML = '';
+            
+            if (dateColumns && dateColumns.length > 0) {
+                container.classList.remove('hidden');
+                dateColumns.forEach(date => {
+                    listEl.innerHTML += `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full font-medium"><i class="fa-solid fa-calendar-day mr-1"></i> ${date}</span>`;
+                });
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function getStartOfWeek(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+        }
+
+        function renderTrendReport(activeData) {
+            const tbody = document.getElementById('trend-table-body');
+            tbody.innerHTML = '';
+            
+            if (!activeDateColumns || activeDateColumns.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500">ไม่มีข้อมูลตามตัวเลือกช่วงเวลาที่กำหนด</td></tr>`;
+                if (trendChartInstance) trendChartInstance.destroy();
+                return;
+            }
+
+            const groups = {};
+
+            activeDateColumns.forEach(colName => {
+                const dateObj = parseDateString(colName);
+                if (!dateObj) return;
+
+                let key = '';
+                let label = '';
+                
+                if (currentTrendInterval === 'day') {
+                    key = colName;
+                    label = colName;
+                } else if (currentTrendInterval === 'week') {
+                    const startOfWeek = getStartOfWeek(dateObj);
+                    key = startOfWeek.toISOString().slice(0, 10);
+                    label = "สัปดาห์ " + startOfWeek.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                } else if (currentTrendInterval === 'month') {
+                    key = dateObj.getFullYear() + "-" + String(dateObj.getMonth() + 1).padStart(2, '0');
+                    label = dateObj.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+                } else if (currentTrendInterval === 'year') {
+                    key = String(dateObj.getFullYear());
+                    label = "ปี พ.ศ. " + (dateObj.getFullYear() + 543);
+                }
+
+                let dayQty = 0;
+                let dayRevenue = 0;
+                let dayCost = 0;
+                let dayProfit = 0;
+
+                rawSalesData.forEach(row => {
+                    const qty = parseNumeric(row[colName]);
+                    if (qty === 0) return;
+                    
+                    const price = parseNumeric(row['ราคา/หน่วย']);
+                    const cost = parseNumeric(row['ต้นทุน']);
+                    
+                    dayQty += qty;
+                    dayRevenue += qty * price;
+                    dayCost += qty * cost;
+                    dayProfit += qty * (price - cost);
+                });
+
+                if (dayQty > 0) {
+                    if (!groups[key]) {
+                        groups[key] = {
+                            key: key,
+                            label: label,
+                            qty: 0,
+                            revenue: 0,
+                            cost: 0,
+                            profit: 0,
+                            minDate: dateObj
+                        };
+                    }
+                    groups[key].qty += dayQty;
+                    groups[key].revenue += dayRevenue;
+                    groups[key].cost += dayCost;
+                    groups[key].profit += dayProfit;
+                    if (dateObj < groups[key].minDate) {
+                        groups[key].minDate = dateObj;
+                    }
+                }
+            });
+
+            const sortedGroups = Object.values(groups).sort((a, b) => a.minDate - b.minDate);
+
+            if (sortedGroups.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-500">ไม่มีข้อมูลการขายในรอบช่วงเวลาที่เลือก</td></tr>`;
+                if (trendChartInstance) trendChartInstance.destroy();
+                return;
+            }
+
+            const labels = [];
+            const revenueData = [];
+            const profitData = [];
+
+            sortedGroups.forEach(g => {
+                labels.push(g.label);
+                revenueData.push(g.revenue);
+                profitData.push(g.profit);
+                
+                const margin = g.revenue > 0 ? ((g.profit / g.revenue) * 100).toFixed(1) : '0.0';
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="px-6 py-4 font-medium text-slate-800">${escapeHtml(g.label)}</td>
+                        <td class="px-6 py-4 text-right">${formatNumber(g.qty)}</td>
+                        <td class="px-6 py-4 text-right font-medium text-slate-700">${formatMoney(g.revenue).replace('฿', '')}</td>
+                        <td class="px-6 py-4 text-right text-slate-500">${formatMoney(g.cost).replace('฿', '')}</td>
+                        <td class="px-6 py-4 text-right text-emerald-600 font-medium">${formatMoney(g.profit).replace('฿', '')}</td>
+                        <td class="px-6 py-4 text-right text-xs">
+                            <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold">${margin}%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('trend-chart-title').innerText = `แนวโน้มและเปรียบเทียบยอดขาย (${currentTrendInterval === 'day' ? 'รายวัน' : currentTrendInterval === 'week' ? 'รายสัปดาห์' : currentTrendInterval === 'month' ? 'รายเดือน' : 'รายปี'})`;
+
+            if (trendChartInstance) trendChartInstance.destroy();
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'กำไรสุทธิ (บาท)',
+                            data: profitData,
+                            borderColor: '#10B981',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'ยอดขายรวม (บาท)',
+                            data: revenueData,
+                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                            hoverBackgroundColor: 'rgba(79, 70, 229, 0.9)',
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: "'Prompt', sans-serif" } } }
+                    },
+                    animation: { duration: 0 },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { family: "'Prompt', sans-serif" } } },
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: "'Prompt', sans-serif" } } }
+                    }
+                }
+            });
+        }
+
+        function setTrendInterval(interval) {
+            currentTrendInterval = interval;
+            
+            const intervals = ['day', 'week', 'month', 'year'];
+            intervals.forEach(i => {
+                const btn = document.getElementById(`btn-trend-${i}`);
+                if (i === interval) {
+                    btn.className = "px-4 py-2 text-sm font-medium text-primary bg-slate-50 border border-primary rounded-md focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors";
+                } else {
+                    btn.className = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-md hover:bg-slate-50 hover:text-primary focus:z-10 focus:ring-1 focus:ring-primary focus:text-primary transition-colors";
+                }
+            });
+
+            renderTrendReport();
+        }
+
+        function initGas() {
+            if (gasUrl) {
+                document.getElementById('gas-url-input').value = gasUrl;
+                checkGasConnection();
+            }
+            toggleImportMode('drive'); // Default to Drive tab
+        }
+
 
     </script>
 </body>
