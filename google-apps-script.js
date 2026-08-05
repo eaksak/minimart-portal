@@ -238,20 +238,36 @@ function importNewExcelFiles(config) {
 }
 
 /**
- * Convert Excel to Google Sheets format using Advanced Drive Service
+ * Convert Excel to Google Sheets format using Advanced Drive Service (supports v2 and v3)
  */
 function convertExcelToGoogleSheet(fileId, folderId) {
   var file = DriveApp.getFileById(fileId);
   var blob = file.getBlob();
-  var resource = {
-    title: "Temp_" + file.getName(),
-    mimeType: MimeType.GOOGLE_SHEETS,
-    parents: [{id: folderId}]
-  };
   
-  // Call Advanced Drive Service
-  var newFile = Drive.Files.insert(resource, blob);
-  return newFile.id;
+  if (typeof Drive !== 'undefined' && Drive.Files) {
+    // Check Drive API v2
+    if (typeof Drive.Files.insert === 'function') {
+      var resourceV2 = {
+        title: "Temp_" + file.getName(),
+        mimeType: MimeType.GOOGLE_SHEETS,
+        parents: [{id: folderId}]
+      };
+      var newFileV2 = Drive.Files.insert(resourceV2, blob);
+      return newFileV2.id;
+    }
+    // Check Drive API v3
+    else if (typeof Drive.Files.create === 'function') {
+      var resourceV3 = {
+        name: "Temp_" + file.getName(),
+        mimeType: MimeType.GOOGLE_SHEETS,
+        parents: [folderId]
+      };
+      var newFileV3 = Drive.Files.create(resourceV3, blob);
+      return newFileV3.id;
+    }
+  }
+  
+  throw new Error("Drive API Advanced Service is not enabled. Please click Services (+) in Apps Script, select Drive API, and add it.");
 }
 
 /**
@@ -399,6 +415,20 @@ function processSingleSheet(tempSheetId) {
   return dateStr;
 }
 
+function formatHeaderValue(cellValue) {
+  if (cellValue instanceof Date) {
+    return Utilities.formatDate(cellValue, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  }
+  var str = String(cellValue || '').trim();
+  if (str.length > 10 && (str.indexOf("GMT") !== -1 || str.indexOf("T") !== -1)) {
+    var d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
+    }
+  }
+  return str;
+}
+
 /**
  * Fetch and format data from MasterSales sheet to return as JSON object
  */
@@ -411,7 +441,7 @@ function getMasterSalesData() {
     return { data: [], dateColumns: [] };
   }
   
-  var headers = values[0].map(function(h) { return String(h).trim(); });
+  var headers = values[0].map(formatHeaderValue);
   
   // Identify which columns are date columns (columns index 7 and onwards)
   var dateColumns = [];

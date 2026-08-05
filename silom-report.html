@@ -1176,28 +1176,36 @@
             return excludedStockCategoryNumbers.has(getCategoryNumber(category));
         }
 
-        // Date Parser รองรับ D/M/YYYY, DD/MM/YYYY, ISO String และปี พ.ศ.
+        // Date Parser รองรับ D/M/YYYY, DD/MM/YYYY, ISO String, GMT String และปี พ.ศ.
         function parseDateString(dateStr) {
             if (!dateStr) return null;
+            if (dateStr instanceof Date) {
+                return new Date(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate());
+            }
             const strVal = String(dateStr).trim();
-            if (strVal.includes('T')) {
+            if (strVal.includes('T') || strVal.includes('GMT') || (strVal.length > 15 && !strVal.match(/^\d/))) {
                 const d = new Date(strVal);
                 if (!isNaN(d.getTime())) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
             }
             const match = strVal.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
-            if (!match) return null;
-            const day = Number(match[1]);
-            const month = Number(match[2]);
-            let year = Number(match[3]);
-            if (year < 100) year += 2000;
-            if (year > 2400) year -= 543;
-            const parsed = new Date(year, month - 1, day);
-            if (
-                parsed.getFullYear() !== year ||
-                parsed.getMonth() !== month - 1 ||
-                parsed.getDate() !== day
-            ) return null;
-            return parsed;
+            if (match) {
+                const day = Number(match[1]);
+                const month = Number(match[2]);
+                let year = Number(match[3]);
+                if (year < 100) year += 2000;
+                if (year > 2400) year -= 543;
+                const parsed = new Date(year, month - 1, day);
+                if (
+                    parsed.getFullYear() === year &&
+                    parsed.getMonth() === month - 1 &&
+                    parsed.getDate() === day
+                ) return parsed;
+            }
+            const isoMatch = strVal.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+            if (isoMatch) {
+                return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+            }
+            return null;
         }
 
         function getRowQtyForDate(row, colName) {
