@@ -1093,24 +1093,29 @@
             document.getElementById('loading-overlay').classList.remove('hidden');
             
             setTimeout(() => {
-                // Enable navigation selectively
-                updateSidebarNavigationStates();
-                
-                // Initialize Filters
-                populateCategoryFilters();
-                
-                // Render initial data (Default 'All Time')
-                applyFilters();
-                
-                document.getElementById('loading-overlay').classList.add('hidden');
-                
-                // Switch to category sales tab if available, else stock tab
-                if (rawSalesData.length > 0) {
-                    switchTab('category');
-                } else if (rawStockData.length > 0) {
-                    switchTab('oos');
+                try {
+                    // Enable navigation selectively
+                    updateSidebarNavigationStates();
+                    
+                    // Initialize Filters
+                    populateCategoryFilters();
+                    
+                    // Render initial data (Default 'All Time')
+                    applyFilters();
+                    
+                    // Switch to category sales tab if available, else stock tab
+                    if (rawSalesData.length > 0) {
+                        switchTab('category');
+                    } else if (rawStockData.length > 0) {
+                        switchTab('oos');
+                    }
+                } catch (err) {
+                    console.error("Error generating dashboard:", err);
+                    alert("เกิดข้อผิดพลาดขณะสร้างรายงาน: " + err.message);
+                } finally {
+                    document.getElementById('loading-overlay').classList.add('hidden');
                 }
-            }, 500); // Simulate brief processing time for UX
+            }, 500);
         }
 
         function parseNumeric(value) {
@@ -1969,7 +1974,7 @@
         }
 
         function processDriveData() {
-            if (rawSalesData.length === 0) {
+            if (!Array.isArray(rawSalesData) || rawSalesData.length === 0) {
                 alert("กรุณาซิงค์ข้อมูลจาก Google Drive ก่อนสร้างรายงาน");
                 return;
             }
@@ -1977,20 +1982,24 @@
             document.getElementById('loading-overlay').classList.remove('hidden');
             
             setTimeout(() => {
-                // Enable navigation selectively
-                updateSidebarNavigationStates();
-                
-                // Initialize Filters
-                populateCategoryFilters();
-                
-                // Render initial data (Default 'All Time')
-                applyFilters();
-                
-                // Hide loading overlay
-                document.getElementById('loading-overlay').classList.add('hidden');
-                
-                // Switch to category sales tab
-                switchTab('category');
+                try {
+                    // Enable navigation selectively
+                    updateSidebarNavigationStates();
+                    
+                    // Initialize Filters
+                    populateCategoryFilters();
+                    
+                    // Render initial data (Default 'All Time')
+                    applyFilters();
+                    
+                    // Switch to category sales tab
+                    switchTab('category');
+                } catch (err) {
+                    console.error("Error generating dashboard:", err);
+                    alert("เกิดข้อผิดพลาดขณะสร้างรายงาน: " + err.message);
+                } finally {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                }
             }, 300);
         }
 
