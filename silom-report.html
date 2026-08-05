@@ -273,6 +273,9 @@
             <button onclick="switchTab('trend')" id="nav-trend" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-chart-line w-5 text-indigo-400"></i> <span>สรุปยอดขายรายช่วงเวลา</span>
             </button>
+            <button onclick="switchTab('group')" id="nav-group" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa-solid fa-table-cells w-5 text-emerald-400"></i> <span>สรุปตามกลุ่มงาน</span>
+            </button>
             <button onclick="switchTab('top10')" id="nav-top10" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-trophy w-5"></i> <span>Top 10 สินค้าขายดี</span>
             </button>
@@ -866,7 +869,7 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             
             // Update Nav Active State
-            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'];
+            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-group', 'nav-top10', 'nav-oos', 'nav-stock'];
             navIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (id === `nav-${tabId}`) {
@@ -1320,6 +1323,7 @@
             renderCategoryTab(activeData);
             renderTop10(activeData); // Render Top 10 relies on this data too
             renderTrendReport(activeData); // Render Period Summary Report
+            renderWorkGroupReport(activeData); // Render Work Group Breakdown & Daily Matrix
             // Stock tab doesn't rely on date filter typically, but we'll re-render to ensure consistency
             renderOOSAlert();
             renderStockAlert(); 
