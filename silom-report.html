@@ -866,7 +866,7 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             
             // Update Nav Active State
-            const navIds = ['nav-upload', 'nav-category', 'nav-top10', 'nav-oos', 'nav-stock'];
+            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'];
             navIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (id === `nav-${tabId}`) {
@@ -1967,13 +1967,24 @@
                 return;
             }
             
-            // Enable navigation selectively
-            updateSidebarNavigationStates();
+            document.getElementById('loading-overlay').classList.remove('hidden');
             
-            populateCategoryFilters();
-            applyFilters();
-            
-            switchTab('category');
+            setTimeout(() => {
+                // Enable navigation selectively
+                updateSidebarNavigationStates();
+                
+                // Initialize Filters
+                populateCategoryFilters();
+                
+                // Render initial data (Default 'All Time')
+                applyFilters();
+                
+                // Hide loading overlay
+                document.getElementById('loading-overlay').classList.add('hidden');
+                
+                // Switch to category sales tab
+                switchTab('category');
+            }, 300);
         }
 
         function uploadSalesToDrive(event) {
