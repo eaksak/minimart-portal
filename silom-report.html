@@ -273,9 +273,6 @@
             <button onclick="switchTab('trend')" id="nav-trend" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-chart-line w-5 text-indigo-400"></i> <span>สรุปยอดขายรายช่วงเวลา</span>
             </button>
-            <button onclick="switchTab('group')" id="nav-group" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                <i class="fa-solid fa-table-cells w-5 text-emerald-400"></i> <span>สรุปตามกลุ่มงาน</span>
-            </button>
             <button onclick="switchTab('top10')" id="nav-top10" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-trophy w-5"></i> <span>Top 10 สินค้าขายดี</span>
             </button>
@@ -869,7 +866,7 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             
             // Update Nav Active State
-            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-group', 'nav-top10', 'nav-oos', 'nav-stock'];
+            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'];
             navIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (id === `nav-${tabId}`) {
@@ -897,6 +894,10 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            const isDriveStockUpload = type === 'stock' && event.target.id === 'stock-drive-file';
+            const statusId = isDriveStockUpload ? 'stock-status-info' : `${type}-status`;
+            const filenameId = isDriveStockUpload ? 'stock-filename-info' : `${type}-filename`;
+
             if (type === 'sales') {
                 rawSalesData = [];
                 dateColumns = [];
@@ -907,8 +908,8 @@
             }
 
             // Show status
-            document.getElementById(`${type}-status`).classList.remove('hidden');
-            document.getElementById(`${type}-filename`).innerText = file.name;
+            document.getElementById(statusId).classList.remove('hidden');
+            document.getElementById(filenameId).innerText = file.name;
             document.getElementById('upload-error').classList.add('hidden');
 
             const reader = new FileReader();
@@ -990,7 +991,7 @@
                     document.getElementById('upload-error').innerText = `ข้อผิดพลาด: ${error.message}`;
                     document.getElementById('upload-error').classList.remove('hidden');
                     
-                    document.getElementById(`${type}-status`).classList.add('hidden');
+                    document.getElementById(statusId).classList.add('hidden');
                     checkBothFilesLoaded();
                 }
             };
@@ -1323,7 +1324,6 @@
             renderCategoryTab(activeData);
             renderTop10(activeData); // Render Top 10 relies on this data too
             renderTrendReport(activeData); // Render Period Summary Report
-            renderWorkGroupReport(activeData); // Render Work Group Breakdown & Daily Matrix
             // Stock tab doesn't rely on date filter typically, but we'll re-render to ensure consistency
             renderOOSAlert();
             renderStockAlert(); 
@@ -1955,7 +1955,7 @@
                         statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> เชื่อมต่อสำเร็จ (ไม่มีข้อมูลใน Google Sheet)`;
                     }
                 } else {
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ข้อผิดพลาดจากระบบ: ${result.message}`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ข้อผิดพลาดจากระบบ: ${escapeHtml(result.message || 'Unknown error')}`;
                     syncBtn.setAttribute('disabled', 'true');
                     uploadBtn.setAttribute('disabled', 'true');
                     processBtn.setAttribute('disabled', 'true');
@@ -1998,7 +1998,7 @@
                     renderProcessedDatesList();
                     alert(`ซิงค์ข้อมูลสำเร็จ!\nประมวลผลไฟล์ใหม่: ${filesCount} ไฟล์\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
                 } else {
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ซิงค์ล้มเหลว: ${result.message}`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ซิงค์ล้มเหลว: ${escapeHtml(result.message || 'Unknown error')}`;
                     alert(`ซิงค์ล้มเหลว: ${result.message}`);
                 }
             } catch (err) {
@@ -2118,7 +2118,7 @@
             if (dateColumns && dateColumns.length > 0) {
                 container.classList.remove('hidden');
                 dateColumns.forEach(date => {
-                    listEl.innerHTML += `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full font-medium"><i class="fa-solid fa-calendar-day mr-1"></i> ${date}</span>`;
+                    listEl.innerHTML += `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-3 py-1.5 rounded-full font-medium"><i class="fa-solid fa-calendar-day mr-1"></i> ${escapeHtml(date)}</span>`;
                 });
             } else {
                 container.classList.add('hidden');
@@ -2172,7 +2172,7 @@
                 let dayProfit = 0;
 
                 rawSalesData.forEach(row => {
-                    const qty = parseNumeric(row[colName]);
+                    const qty = getRowQtyForDate(row, colName);
                     if (qty === 0) return;
                     
                     const price = parseNumeric(row['ราคา/หน่วย']);
