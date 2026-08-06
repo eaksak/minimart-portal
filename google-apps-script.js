@@ -1,18 +1,22 @@
 /**
- * Google Apps Script for Silom POS - Sales Consolidation & REST API
+ * Google Apps Script for Silom POS - Sales Consolidation & Read-only API
  * 
  * Instructions:
  * 1. Create a new Google Sheet.
  * 2. Click Extensions > Apps Script.
  * 3. Delete any default code and paste this script.
  * 4. In the Apps Script editor, click on "Services" (left sidebar, + button), select "Drive API", and add it.
- * 5. Deploy as Web App:
+ * 5. Reload the spreadsheet, open the "Silom POS" menu, and run:
+ *    - "ตั้งค่าระบบและดูโฟลเดอร์อัปโหลด"
+ *    - "ติดตั้งซิงค์อัตโนมัติทุก 1 ชั่วโมง"
+ * 6. Upload sales files only to the protected Drive upload folder.
+ * 7. Deploy as Web App:
  *    - Click Deploy > New deployment.
  *    - Select type: Web App.
  *    - Set "Execute as": Me.
  *    - Set "Who has access": Anyone.
  *    - Click Deploy, authorize permissions, and copy the Web App URL.
- * 6. Paste the Web App URL into the dashboard settings under the Import tab.
+ * 8. Paste the Web App URL into the dashboard settings under the Import tab.
  */
 
 // --- CONFIGURATION ---
@@ -20,38 +24,22 @@ var CONFIG_SHEET_NAME = "Config";
 var MASTER_SHEET_NAME = "MasterSales";
 var DEFAULT_UPLOAD_FOLDER = "Silom Sales Upload";
 var DEFAULT_ARCHIVE_FOLDER = "Silom Sales Archive";
+var SPREADSHEET_ID_PROPERTY = "SILOM_SPREADSHEET_ID";
 
 /**
- * Handle HTTP GET Requests
- * Supports:
- * - ?action=sync : Sync new Excel files in Drive and return updated master sales data
- * - (default)    : Return current master sales data from the spreadsheet
+ * Public read-only endpoint. It never imports files or writes to Drive/Sheets.
  */
-function doGet(e) {
-  var action = e && e.parameter && e.parameter.action;
+function doGet() {
   var response = {};
   
   try {
-    // Run setup to ensure folders and sheets exist
-    var config = getOrSetupEnvironment();
-    
-    if (action === "sync") {
-      var syncResult = importNewExcelFiles(config);
-      response = {
-        status: "success",
-        message: "Sync completed successfully.",
-        filesProcessed: syncResult.filesProcessed,
-        data: getMasterSalesData(),
-        dateColumns: syncResult.dateColumns
-      };
-    } else {
-      var dataObj = getMasterSalesData();
-      response = {
-        status: "success",
-        data: dataObj.data,
-        dateColumns: dataObj.dateColumns
-      };
-    }
+    var dataObj = getMasterSalesData();
+    response = {
+      status: "success",
+      mode: "read-only",
+      data: dataObj.data,
+      dateColumns: dataObj.dateColumns
+    };
   } catch (err) {
     response = {
       status: "error",
@@ -64,55 +52,119 @@ function doGet(e) {
 }
 
 /**
- * Handle HTTP POST Requests
- * Allows uploading base64 Excel files directly from the dashboard web interface.
+ * Reject public write requests. Uploads must go through the protected Drive folder.
  */
-function doPost(e) {
-  var response = {};
-  
+function doPost() {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "error",
+    code: "METHOD_NOT_ALLOWED",
+    message: "Direct uploads are disabled. Upload the Excel file to the authorized Google Drive folder."
+  }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Add private operational controls to the bound spreadsheet. */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("Silom POS")
+    .addItem("ตั้งค่าระบบและดูโฟลเดอร์อัปโหลด", "initializeSilomSystem")
+    .addItem("ซิงค์ไฟล์ยอดขายตอนนี้", "syncUploadedSalesFilesFromMenu")
+    .addSeparator()
+    .addItem("ติดตั้งซิงค์อัตโนมัติทุก 1 ชั่วโมง", "installHourlySyncTrigger")
+    .addItem("ยกเลิกซิงค์อัตโนมัติ", "removeScheduledSyncTriggersFromMenu")
+    .addToUi();
+}
+
+function initializeSilomSystem() {
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (!activeSpreadsheet) {
+    throw new Error("Open the bound Google Sheet before initializing the system.");
+  }
+  PropertiesService.getScriptProperties()
+    .setProperty(SPREADSHEET_ID_PROPERTY, activeSpreadsheet.getId());
+
+  var config = getOrSetupEnvironment();
+  var uploadFolder = DriveApp.getFolderById(config.uploadFolderId);
+  SpreadsheetApp.getUi().alert(
+    "ตั้งค่าระบบเรียบร้อย\n\nอัปโหลดไฟล์ยอดขายที่โฟลเดอร์นี้เท่านั้น:\n" + uploadFolder.getUrl()
+  );
+}
+
+/** Private sync function used by the time trigger. */
+function syncUploadedSalesFiles() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    throw new Error("Another sales sync is already running.");
+  }
+
   try {
     var config = getOrSetupEnvironment();
-    var postData = JSON.parse(e.postData.contents);
-    
-    var filename = postData.filename;
-    var base64Data = postData.base64Data;
-    
-    if (!filename || !base64Data) {
-      throw new Error("Missing filename or base64Data in POST request.");
-    }
-    
-    // Decode base64 and save to upload folder
-    var decoded = Utilities.base64Decode(base64Data);
-    var blob = Utilities.newBlob(decoded, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
-    var uploadFolder = DriveApp.getFolderById(config.uploadFolderId);
-    var file = uploadFolder.createFile(blob);
-    
-    // Run sync immediately for this new file
-    var syncResult = importNewExcelFiles(config);
-    
-    response = {
-      status: "success",
-      message: "File " + filename + " uploaded and processed.",
-      filesProcessed: syncResult.filesProcessed,
-      data: getMasterSalesData(),
-      dateColumns: syncResult.dateColumns
-    };
-  } catch (err) {
-    response = {
-      status: "error",
-      message: err.toString()
-    };
+    return importNewExcelFiles(config);
+  } finally {
+    lock.releaseLock();
   }
-  
-  return ContentService.createTextOutput(JSON.stringify(response))
-    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function syncUploadedSalesFilesFromMenu() {
+  var result = syncUploadedSalesFiles();
+  SpreadsheetApp.getUi().alert(
+    "ซิงค์เสร็จเรียบร้อย\nประมวลผล " + result.filesProcessed.length + " ไฟล์"
+  );
+}
+
+function installHourlySyncTrigger() {
+  initializeSpreadsheetReference_();
+  removeScheduledSyncTriggers_();
+  ScriptApp.newTrigger("syncUploadedSalesFiles")
+    .timeBased()
+    .everyHours(1)
+    .create();
+  SpreadsheetApp.getUi().alert("ติดตั้งการซิงค์อัตโนมัติทุก 1 ชั่วโมงเรียบร้อย");
+}
+
+function removeScheduledSyncTriggersFromMenu() {
+  var removed = removeScheduledSyncTriggers_();
+  SpreadsheetApp.getUi().alert("ยกเลิก Trigger จำนวน " + removed + " รายการเรียบร้อย");
+}
+
+function removeScheduledSyncTriggers_() {
+  var removed = 0;
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === "syncUploadedSalesFiles") {
+      ScriptApp.deleteTrigger(trigger);
+      removed++;
+    }
+  });
+  return removed;
+}
+
+function initializeSpreadsheetReference_() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (!spreadsheet) {
+    throw new Error("Open the bound Google Sheet before installing the trigger.");
+  }
+  PropertiesService.getScriptProperties()
+    .setProperty(SPREADSHEET_ID_PROPERTY, spreadsheet.getId());
+}
+
+function getSilomSpreadsheet_() {
+  var spreadsheetId = PropertiesService.getScriptProperties()
+    .getProperty(SPREADSHEET_ID_PROPERTY);
+  if (spreadsheetId) {
+    return SpreadsheetApp.openById(spreadsheetId);
+  }
+
+  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (activeSpreadsheet) return activeSpreadsheet;
+
+  throw new Error("Silom spreadsheet is not initialized. Run initializeSilomSystem from the spreadsheet menu.");
 }
 
 /**
  * Setup sheets and Google Drive folders if they don't exist, and return folder IDs
  */
 function getOrSetupEnvironment() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSilomSpreadsheet_();
   
   // 1. Setup Config Sheet
   var configSheet = ss.getSheetByName(CONFIG_SHEET_NAME);
@@ -179,7 +231,7 @@ function isValidFolder(id) {
 }
 
 function updateConfigValue(key, value) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSilomSpreadsheet_();
   var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
   var range = sheet.getDataRange();
   var values = range.getValues();
@@ -340,7 +392,7 @@ function processSingleSheet(tempSheetId) {
   }
   
   // Load Master sheet
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSilomSpreadsheet_();
   var masterSheet = ss.getSheetByName(MASTER_SHEET_NAME);
   var masterData = masterSheet.getDataRange().getValues();
   var masterHeaders = masterData[0].map(function(h) { return String(h).trim(); });
@@ -433,7 +485,7 @@ function formatHeaderValue(cellValue) {
  * Fetch and format data from MasterSales sheet to return as JSON object
  */
 function getMasterSalesData() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSilomSpreadsheet_();
   var sheet = ss.getSheetByName(MASTER_SHEET_NAME);
   var values = sheet.getDataRange().getValues();
   
