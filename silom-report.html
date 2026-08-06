@@ -355,7 +355,7 @@
             <div id="tab-upload" class="tab-content active h-full flex flex-col justify-start max-w-4xl mx-auto pt-6 overflow-y-auto">
                 <div class="text-center mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 mb-2">นำเข้าข้อมูลรายงานจาก Silom POS</h2>
-                    <p class="text-slate-500 text-sm">เลือกเชื่อมต่อผ่าน Google Drive เพื่อเก็บประวัติยอดขาย หรืออัปโหลดไฟล์ในเครื่องโดยตรง</p>
+                    <p class="text-slate-500 text-sm">ยอดขายซิงค์จากโฟลเดอร์ Google Drive ที่ได้รับสิทธิ์ ส่วนไฟล์ในเครื่องใช้วิเคราะห์ชั่วคราวเท่านั้น</p>
                 </div>
 
                 <!-- Sub-tabs for Local vs Drive -->
@@ -388,20 +388,17 @@
 
                     <!-- Sync Actions Box -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                        <!-- Direct File Upload to Drive -->
+                        <!-- Protected Drive Upload Instructions -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative hover:shadow-md transition-shadow">
                             <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
-                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                                <i class="fa-brands fa-google-drive"></i>
                             </div>
-                            <h3 class="text-base font-semibold mb-1">อัปโหลดไฟล์ยอดขายไปยัง Drive</h3>
-                            <p class="text-xs text-slate-500 mb-4">ส่งไฟล์รายงานสรุปจำนวนการขายสินค้าเข้า Drive และซิงค์ทันที</p>
-                            
-                            <input type="file" id="sales-drive-file" accept=".xlsx, .xls" class="hidden" onchange="uploadSalesToDrive(event)">
-                            <button id="btn-sales-drive" onclick="document.getElementById('sales-drive-file').click()" class="w-full py-2.5 px-4 bg-indigo-50 text-indigo-600 font-medium rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-200 text-sm disabled:opacity-50" disabled>
-                                เลือกและอัปโหลดยอดขาย
-                            </button>
-                            <div id="sales-drive-status" class="mt-2 text-xs text-slate-400 hidden flex items-center justify-center gap-1.5">
-                                <i class="fa-solid fa-spinner fa-spin text-primary"></i> <span>กำลังอัปโหลดและประมวลผล...</span>
+                            <h3 class="text-base font-semibold mb-2">อัปโหลดผ่านโฟลเดอร์ Google Drive</h3>
+                            <p class="text-xs text-slate-500 mb-4">เพื่อความปลอดภัย ระบบไม่รับไฟล์ผ่านหน้าเว็บ กรุณาวางไฟล์ยอดขายในโฟลเดอร์ที่ผู้ดูแลกำหนด</p>
+                            <div class="text-left text-xs text-slate-600 bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-2">
+                                <p><strong>1.</strong> เปิดโฟลเดอร์ <span class="font-semibold">Silom Sales Upload</span></p>
+                                <p><strong>2.</strong> อัปโหลดไฟล์ .xlsx หรือ .xls</p>
+                                <p><strong>3.</strong> รอซิงค์อัตโนมัติ หรือให้ผู้ดูแลกดซิงค์จากเมนูใน Google Sheet</p>
                             </div>
                         </div>
 
@@ -425,8 +422,8 @@
 
                     <!-- Sync buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 items-center justify-center pt-2">
-                        <button id="btn-sync-drive" onclick="syncWithDrive()" class="w-full sm:w-auto py-3 px-6 bg-slate-800 text-white font-bold rounded-xl shadow hover:bg-slate-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <i class="fa-solid fa-rotate"></i> ซิงค์ยอดขายทั้งหมดจาก Google Drive
+                        <button id="btn-sync-drive" onclick="refreshSalesData()" class="w-full sm:w-auto py-3 px-6 bg-slate-800 text-white font-bold rounded-xl shadow hover:bg-slate-700 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-rotate"></i> รีเฟรชข้อมูลจาก Google Sheet
                         </button>
                         <button id="btn-process-drive" onclick="processDriveData()" class="w-full sm:w-auto py-3 px-8 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             <i class="fa-solid fa-chart-pie"></i> สร้างรายงาน (Generate Dashboard)
@@ -1920,13 +1917,11 @@
         async function checkGasConnection() {
             const statusEl = document.getElementById('gas-connection-status');
             const syncBtn = document.getElementById('btn-sync-drive');
-            const uploadBtn = document.getElementById('btn-sales-drive');
             const processBtn = document.getElementById('btn-process-drive');
             
             if (!gasUrl) {
                 statusEl.innerHTML = `<i class="fa-solid fa-circle text-slate-300"></i> ยังไม่ได้ระบุ URL เชื่อมต่อ`;
                 syncBtn.setAttribute('disabled', 'true');
-                uploadBtn.setAttribute('disabled', 'true');
                 processBtn.setAttribute('disabled', 'true');
                 return;
             }
@@ -1940,7 +1935,6 @@
                 if (result.status === 'success') {
                     statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> เชื่อมต่อสำเร็จ! พร้อมใช้งาน`;
                     syncBtn.removeAttribute('disabled');
-                    uploadBtn.removeAttribute('disabled');
                     
                     const salesArray = Array.isArray(result.data) ? result.data : (result.data ? result.data.data : []);
                     const datesArray = result.dateColumns || (result.data ? result.data.dateColumns : []) || [];
@@ -1957,27 +1951,25 @@
                 } else {
                     statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ข้อผิดพลาดจากระบบ: ${escapeHtml(result.message || 'Unknown error')}`;
                     syncBtn.setAttribute('disabled', 'true');
-                    uploadBtn.setAttribute('disabled', 'true');
                     processBtn.setAttribute('disabled', 'true');
                 }
             } catch (err) {
                 console.error("Connection failed", err);
                 statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> เชื่อมต่อไม่สำเร็จ: ตรวจสอบความถูกต้องของ URL หรือสิทธิ์การเข้าถึง (สิทธิ์ต้องเป็น Anyone)`;
                 syncBtn.setAttribute('disabled', 'true');
-                uploadBtn.setAttribute('disabled', 'true');
                 processBtn.setAttribute('disabled', 'true');
             }
         }
 
-        async function syncWithDrive() {
+        async function refreshSalesData() {
             if (!gasUrl) return;
             
             document.getElementById('loading-overlay').classList.remove('hidden');
             const statusEl = document.getElementById('gas-connection-status');
-            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500"></i> กำลังซิงค์ข้อมูลจาก Google Drive...`;
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-500"></i> กำลังรีเฟรชข้อมูลจาก Google Sheet...`;
             
             try {
-                const response = await fetch(`${gasUrl}?action=sync`);
+                const response = await fetch(gasUrl);
                 const result = await response.json();
                 
                 if (result.status === 'success') {
@@ -1988,22 +1980,21 @@
                     dateColumns = datesArray;
                     identifyDateColumns(rawSalesData);
                     
-                    const filesCount = result.filesProcessed ? result.filesProcessed.length : 0;
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> ซิงค์เสร็จสิ้น! ประมวลผลสำเร็จ ${filesCount} ไฟล์`;
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> รีเฟรชข้อมูลสำเร็จ`;
                     
                     if (rawSalesData.length > 0) {
                         document.getElementById('btn-process-drive').removeAttribute('disabled');
                     }
                     
                     renderProcessedDatesList();
-                    alert(`ซิงค์ข้อมูลสำเร็จ!\nประมวลผลไฟล์ใหม่: ${filesCount} ไฟล์\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
+                    alert(`รีเฟรชข้อมูลสำเร็จ!\nจำนวนรายการทั้งหมด: ${rawSalesData.length} รายการ`);
                 } else {
-                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> ซิงค์ล้มเหลว: ${escapeHtml(result.message || 'Unknown error')}`;
-                    alert(`ซิงค์ล้มเหลว: ${result.message}`);
+                    statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> รีเฟรชล้มเหลว: ${escapeHtml(result.message || 'Unknown error')}`;
+                    alert(`รีเฟรชล้มเหลว: ${result.message}`);
                 }
             } catch (err) {
-                console.error("Sync failed", err);
-                statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> เกิดข้อผิดพลาดขณะซิงค์`;
+                console.error("Refresh failed", err);
+                statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-500"></i> เกิดข้อผิดพลาดขณะรีเฟรชข้อมูล`;
                 alert("เกิดข้อผิดพลาดในการเรียก API: " + err.message);
             } finally {
                 document.getElementById('loading-overlay').classList.add('hidden');
@@ -2012,7 +2003,7 @@
 
         function processDriveData() {
             if (!Array.isArray(rawSalesData) || rawSalesData.length === 0) {
-                alert("กรุณาซิงค์ข้อมูลจาก Google Drive ก่อนสร้างรายงาน");
+                alert("กรุณารีเฟรชข้อมูลจาก Google Sheet ก่อนสร้างรายงาน");
                 return;
             }
             
@@ -2038,76 +2029,6 @@
                     document.getElementById('loading-overlay').classList.add('hidden');
                 }
             }, 300);
-        }
-
-        function uploadSalesToDrive(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!gasUrl) {
-                alert("กรุณาบันทึก URL ของ Web App ก่อนอัปโหลด");
-                return;
-            }
-
-            const statusEl = document.getElementById('sales-drive-status');
-            statusEl.classList.remove('hidden');
-            document.getElementById('btn-sales-drive').setAttribute('disabled', 'true');
-            
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const arrayBuffer = e.target.result;
-                    const base64Data = arrayBufferToBase64(arrayBuffer);
-                    
-                    const payload = {
-                        filename: file.name,
-                        base64Data: base64Data
-                    };
-                    
-                    const response = await fetch(gasUrl, {
-                        method: 'POST',
-                        body: JSON.stringify(payload),
-                        headers: {
-                            'Content-Type': 'text/plain'
-                        }
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.status === 'success') {
-                        const salesArray = Array.isArray(result.data) ? result.data : (result.data ? result.data.data : []);
-                        const datesArray = result.dateColumns || (result.data ? result.data.dateColumns : []) || [];
-                        
-                        rawSalesData = salesArray;
-                        dateColumns = datesArray;
-                        identifyDateColumns(rawSalesData);
-                        
-                        alert(`อัปโหลดและซิงค์ข้อมูลสำเร็จ!\nไฟล์ยอดขายถูกบันทึกไปยัง Google Drive แล้ว`);
-                        document.getElementById('btn-process-drive').removeAttribute('disabled');
-                        renderProcessedDatesList();
-                    } else {
-                        alert(`อัปโหลดล้มเหลว: ${result.message}`);
-                    }
-                } catch (err) {
-                    console.error("Upload failed", err);
-                    alert("เกิดข้อผิดพลาดขณะอัปโหลด: " + err.message);
-                } finally {
-                    statusEl.classList.add('hidden');
-                    document.getElementById('btn-sales-drive').removeAttribute('disabled');
-                    document.getElementById('sales-drive-file').value = '';
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            const len = bytes.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return window.btoa(binary);
         }
 
         function renderProcessedDatesList() {
