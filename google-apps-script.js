@@ -55,8 +55,7 @@ function doGet(e) {
   } catch (err) {
     response = {
       status: "error",
-      message: err.toString(),
-      stack: err.stack
+      message: err.toString()
     };
   }
   
@@ -285,14 +284,15 @@ function processSingleSheet(tempSheetId) {
   
   for (var i = 0; i < Math.min(50, rawData.length); i++) {
     var row = rawData[i];
-    var rowStr = row.map(function(cell) { return String(cell).trim(); }).join("");
+    var formattedRow = row.map(formatHeaderValue);
+    var rowStr = formattedRow.join("");
     
     if (rowStr.indexOf("รหัสสินค้า") !== -1 && rowStr.indexOf("ชื่อสินค้า") !== -1) {
       headerRowIndex = i;
       
       // Look for a date column (DD/MM/YYYY) in the headers
-      for (var colIdx = 0; colIdx < row.length; colIdx++) {
-        var cellVal = String(row[colIdx]).trim();
+      for (var colIdx = 0; colIdx < formattedRow.length; colIdx++) {
+        var cellVal = formattedRow[colIdx];
         var dateMatch = cellVal.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
         if (dateMatch) {
           dateStr = cellVal; // e.g. "01/08/2026"
@@ -318,7 +318,7 @@ function processSingleSheet(tempSheetId) {
     throw new Error("Could not identify header row or report date in file.");
   }
   
-  var headers = rawData[headerRowIndex].map(function(h) { return String(h).trim(); });
+  var headers = rawData[headerRowIndex].map(formatHeaderValue);
   
   // Map index of columns of interest in raw file
   var skuColIdx = headers.indexOf("รหัสสินค้า");
