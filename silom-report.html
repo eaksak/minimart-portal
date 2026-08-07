@@ -131,9 +131,11 @@
             }
             body.print-all .all-reports-only { display: block !important; }
             body.print-all #tab-category { break-before: auto; page-break-before: auto; }
+            body.print-all #tab-group,
             body.print-all #tab-top10,
             body.print-all #tab-oos,
-            body.print-all #tab-stock {
+            body.print-all #tab-stock,
+            body.print-all #tab-trend {
                 break-before: page;
                 page-break-before: always;
             }
@@ -181,10 +183,12 @@
 
             /* Grid/Flex อาจทำให้ Chrome ตัดเนื้อหาเมื่อแบ่งหลายหน้า */
             #tab-category > .grid,
+            #tab-group > .grid,
             #tab-top10 > .grid {
                 display: block !important;
             }
             #tab-category > .grid > *,
+            #tab-group > .grid > *,
             #tab-top10 > .grid > * {
                 margin-bottom: 12px !important;
             }
@@ -217,6 +221,7 @@
             canvas { max-width: 100% !important; }
             #tab-top10 .min-h-\[400px\] { min-height: 320px !important; height: 320px !important; }
             #tab-category .h-64 { height: 240px !important; }
+            #tab-group .h-80 { height: 280px !important; }
             #print-report-header {
                 border-bottom: 2px solid #1e293b;
                 margin-bottom: 14px;
@@ -273,6 +278,9 @@
             <button onclick="switchTab('trend')" id="nav-trend" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-chart-line w-5 text-indigo-400"></i> <span>สรุปยอดขายรายช่วงเวลา</span>
             </button>
+            <button onclick="switchTab('group')" id="nav-group" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa-solid fa-table-cells w-5 text-emerald-400"></i> <span>ยอดขายตามกลุ่มงาน/ช่วงเวลา</span>
+            </button>
             <button onclick="switchTab('top10')" id="nav-top10" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                 <i class="fa-solid fa-trophy w-5"></i> <span>Top 10 สินค้าขายดี</span>
             </button>
@@ -310,7 +318,7 @@
                     <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">PDF รายงานนี้</span>
                 </button>
 
-                <button onclick="printAllReports()" class="text-sm bg-primary text-white hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2" title="พิมพ์รายงานทั้ง 4 ประเภทเป็น PDF ครั้งเดียว">
+                <button onclick="printAllReports()" class="text-sm bg-primary text-white hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2" title="พิมพ์รายงานทั้งหมดเป็น PDF ครั้งเดียว">
                     <i class="fa-solid fa-file-circle-check"></i> <span class="hidden sm:inline">PDF ทุกรายงาน</span>
                 </button>
                 
@@ -578,10 +586,100 @@
                 </div>
             </div>
 
+            <!-- TAB 2: WORK-GROUP SALES BY PERIOD -->
+            <div id="tab-group" class="tab-content report-tab max-w-7xl mx-auto">
+                <div class="all-reports-only report-section-heading">
+                    <h2>2. รายงานยอดขายแจกแจงตามกลุ่มงานตามช่วงเวลา</h2>
+                    <p>สรุปยอดขายของแต่ละกลุ่มงาน พร้อมรายละเอียดรายวันตามช่วงเวลาที่เลือก</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-2xl"><i class="fa-solid fa-wallet"></i></div>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">ยอดขายรวมทุกกลุ่ม (บาท)</p>
+                            <h3 id="kpi-workgroup-total-sales" class="text-3xl font-bold text-slate-800 mt-1">0.00</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl"><i class="fa-solid fa-box"></i></div>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">จำนวนที่ขายได้ (ชิ้น)</p>
+                            <h3 id="kpi-workgroup-total-qty" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-2xl"><i class="fa-solid fa-crown"></i></div>
+                        <div class="min-w-0">
+                            <p class="text-slate-500 text-sm font-medium">กลุ่มงานยอดขายสูงสุด</p>
+                            <h3 id="kpi-workgroup-top" class="text-lg font-bold text-slate-800 mt-1 truncate">-</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">แนวโน้มยอดขายแยกตามกลุ่มงาน</h3>
+                            <p id="workgroup-period-label" class="text-sm text-slate-500 mt-1">ช่วงเวลา: ทั้งหมด</p>
+                        </div>
+                        <div class="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg">
+                            ใช้ตัวเลือกช่วงเวลาที่ด้านบนของหน้าจอ
+                        </div>
+                    </div>
+                    <div class="relative w-full h-80">
+                        <canvas id="workGroupPeriodChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8">
+                    <div class="report-table-card bg-white rounded-2xl p-0 shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800">สรุปยอดขายตามกลุ่มงาน</h3>
+                        </div>
+                        <div class="report-table-container overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600">
+                                <thead class="text-xs text-slate-700 uppercase bg-emerald-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4">กลุ่มงาน</th>
+                                        <th scope="col" class="px-6 py-4 text-right">จำนวน (ชิ้น)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">ยอดขาย (บาท)</th>
+                                        <th scope="col" class="px-6 py-4 text-right">สัดส่วน</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workgroup-period-summary-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="report-table-card bg-white rounded-2xl p-0 shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800">รายละเอียดรายวันตามกลุ่มงาน</h3>
+                        </div>
+                        <div class="report-table-container overflow-x-auto max-h-[560px] overflow-y-auto">
+                            <table class="w-full text-left text-sm text-slate-600 min-w-[1050px]">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-4">วันที่</th>
+                                        <th scope="col" class="px-4 py-4 text-right">สินค้าสหกรณ์</th>
+                                        <th scope="col" class="px-4 py-4 text-right">โรงอาหารข้าว</th>
+                                        <th scope="col" class="px-4 py-4 text-right">ร้านเบเกอรี่</th>
+                                        <th scope="col" class="px-4 py-4 text-right">ฝากขาย</th>
+                                        <th scope="col" class="px-4 py-4 text-right">เครื่องแบบ/เครื่องหมาย</th>
+                                        <th scope="col" class="px-4 py-4 text-right">รวม (บาท)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workgroup-period-daily-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB 6: SALES TREND & PERIOD SUMMARY -->
             <div id="tab-trend" class="tab-content report-tab max-w-7xl mx-auto">
                 <div class="all-reports-only report-section-heading">
-                    <h2>5. รายงานสรุปยอดขายรายช่วงเวลา</h2>
+                    <h2>6. รายงานสรุปยอดขายรายช่วงเวลา</h2>
                     <p>สรุปผลการดำเนินงานเปรียบเทียบตามช่วงเวลา วัน, สัปดาห์, เดือน และ ปี</p>
                 </div>
 
@@ -648,7 +746,7 @@
             <!-- TAB 3: TOP 10 PRODUCTS -->
             <div id="tab-top10" class="tab-content report-tab max-w-7xl mx-auto">
                 <div class="all-reports-only report-section-heading">
-                    <h2>2. รายงาน 10 อันดับสินค้าขายดี</h2>
+                    <h2>3. รายงาน 10 อันดับสินค้าขายดี</h2>
                     <p>จัดอันดับตามตัวเลือกหมวดหมู่และตัวชี้วัดที่กำหนดไว้</p>
                 </div>
                 
@@ -703,7 +801,7 @@
             <!-- TAB 4: OUT OF STOCK (สินค้าหมดคลัง) -->
             <div id="tab-oos" class="tab-content report-tab max-w-7xl mx-auto">
                 <div class="all-reports-only report-section-heading">
-                    <h2>3. รายงานสินค้าหมดคลังและยอดคงเหลือติดลบ</h2>
+                    <h2>4. รายงานสินค้าหมดคลังและยอดคงเหลือติดลบ</h2>
                     <p>ไม่รวมหมวดที่ขึ้นต้นด้วย 4, 7, 8, 9 และ 10</p>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6 no-print">
@@ -763,7 +861,7 @@
             <!-- TAB 5: LOW STOCK (สินค้าต่ำกว่าจุดสั่งซื้อ) -->
             <div id="tab-stock" class="tab-content report-tab max-w-7xl mx-auto">
                 <div class="all-reports-only report-section-heading">
-                    <h2>4. รายงานสินค้าต่ำกว่าจุดสั่งซื้อ</h2>
+                    <h2>5. รายงานสินค้าต่ำกว่าจุดสั่งซื้อ</h2>
                     <p>ไม่รวมหมวดที่ขึ้นต้นด้วย 4, 7, 8, 9 และ 10</p>
                 </div>
                 <!-- Filters & Settings -->
@@ -837,6 +935,7 @@
         let originalDocumentTitle = document.title;
         
         let categoryChartInstance = null;
+        let workGroupChartInstance = null;
         let top10ChartInstance = null;
         let trendChartInstance = null;
         let gasUrl = localStorage.getItem('silom_gas_url') || '';
@@ -846,6 +945,7 @@
 
         const reportTitles = {
             category: 'รายงานยอดขายตามหมวดหมู่',
+            group: 'รายงานยอดขายแจกแจงตามกลุ่มงานตามช่วงเวลา',
             trend: 'สรุปยอดขายรายช่วงเวลา',
             top10: 'รายงาน 10 อันดับสินค้าขายดี',
             oos: 'รายงานสินค้าหมดคลังและยอดติดลบ',
@@ -863,7 +963,7 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
             
             // Update Nav Active State
-            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'];
+            const navIds = ['nav-upload', 'nav-category', 'nav-trend', 'nav-group', 'nav-top10', 'nav-oos', 'nav-stock'];
             navIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (id === `nav-${tabId}`) {
@@ -1051,7 +1151,7 @@
             document.getElementById('custom-date-container').classList.add('hidden');
             
             // Disable navs
-            ['nav-category', 'nav-trend', 'nav-top10', 'nav-oos', 'nav-stock'].forEach(id => {
+            ['nav-category', 'nav-trend', 'nav-group', 'nav-top10', 'nav-oos', 'nav-stock'].forEach(id => {
                 document.getElementById(id).setAttribute('disabled', 'true');
             });
             
@@ -1074,10 +1174,12 @@
             if (rawSalesData.length > 0) {
                 document.getElementById('nav-category').removeAttribute('disabled');
                 document.getElementById('nav-trend').removeAttribute('disabled');
+                document.getElementById('nav-group').removeAttribute('disabled');
                 document.getElementById('nav-top10').removeAttribute('disabled');
             } else {
                 document.getElementById('nav-category').setAttribute('disabled', 'true');
                 document.getElementById('nav-trend').setAttribute('disabled', 'true');
+                document.getElementById('nav-group').setAttribute('disabled', 'true');
                 document.getElementById('nav-top10').setAttribute('disabled', 'true');
             }
 
@@ -1319,6 +1421,7 @@
         function applyFilters() {
             const activeData = getFilteredSalesData();
             renderCategoryTab(activeData);
+            renderWorkGroupReport(activeData);
             renderTop10(activeData); // Render Top 10 relies on this data too
             renderTrendReport(activeData); // Render Period Summary Report
             // Stock tab doesn't rely on date filter typically, but we'll re-render to ensure consistency
@@ -1483,25 +1586,37 @@
             });
         }
 
-        function renderWorkGroupRevenue(data) {
-            const workGroups = [
-                { key: 'cooperative', label: 'รายได้ขายสินค้าสหกรณ์', amount: 0 },
-                { key: 'canteen', label: 'รายได้โรงอาหารข้าว', amount: 0 },
-                { key: 'bakery', label: 'รายได้ร้านเบเกอรี่', amount: 0 },
-                { key: 'consignment', label: 'รายได้ฝากขาย', amount: 0 },
-                { key: 'uniform', label: 'รายได้เครื่องแบบเครื่องหมาย', amount: 0 }
-            ];
-            const groupMap = Object.fromEntries(workGroups.map(group => [group.key, group]));
+        const workGroupDefinitions = [
+            { key: 'cooperative', label: 'รายได้ขายสินค้าสหกรณ์', shortLabel: 'สินค้าสหกรณ์', color: '#4F46E5' },
+            { key: 'canteen', label: 'รายได้โรงอาหารข้าว', shortLabel: 'โรงอาหารข้าว', color: '#10B981' },
+            { key: 'bakery', label: 'รายได้ร้านเบเกอรี่', shortLabel: 'ร้านเบเกอรี่', color: '#F59E0B' },
+            { key: 'consignment', label: 'รายได้ฝากขาย', shortLabel: 'ฝากขาย', color: '#EC4899' },
+            { key: 'uniform', label: 'รายได้เครื่องแบบเครื่องหมาย', shortLabel: 'เครื่องแบบ/เครื่องหมาย', color: '#0EA5E9' }
+        ];
+
+        function getWorkGroupKey(category) {
+            const categoryNumber = getCategoryNumber(category);
+            if (categoryNumber === 4) return 'canteen';
+            if (categoryNumber === 8) return 'bakery';
+            if (categoryNumber === 9) return 'consignment';
+            if (categoryNumber === 10) return 'uniform';
+            return 'cooperative';
+        }
+
+        function buildWorkGroupSummary(data) {
+            const summary = workGroupDefinitions.map(group => ({ ...group, qty: 0, amount: 0 }));
+            const groupMap = Object.fromEntries(summary.map(group => [group.key, group]));
 
             data.forEach(item => {
-                const categoryNumber = getCategoryNumber(item.category);
-                if (categoryNumber === 4) groupMap.canteen.amount += item.total;
-                else if (categoryNumber === 8) groupMap.bakery.amount += item.total;
-                else if (categoryNumber === 9) groupMap.consignment.amount += item.total;
-                else if (categoryNumber === 10) groupMap.uniform.amount += item.total;
-                else groupMap.cooperative.amount += item.total;
+                const group = groupMap[getWorkGroupKey(item.category)];
+                group.qty += parseNumeric(item.qty);
+                group.amount += parseNumeric(item.total);
             });
+            return summary;
+        }
 
+        function renderWorkGroupRevenue(data) {
+            const workGroups = buildWorkGroupSummary(data);
             const tbody = document.getElementById('workgroup-revenue-table-body');
             tbody.innerHTML = '';
             workGroups.forEach((group, index) => {
@@ -1514,6 +1629,111 @@
                         <td class="px-6 py-4 text-right text-lg font-semibold text-slate-800">${amountDisplay}</td>
                     </tr>
                 `;
+            });
+        }
+
+        function buildWorkGroupDailyRows() {
+            return (activeDateColumns || []).map(colName => {
+                const amounts = Object.fromEntries(workGroupDefinitions.map(group => [group.key, 0]));
+                let total = 0;
+
+                rawSalesData.forEach(row => {
+                    const qty = getRowQtyForDate(row, colName);
+                    if (qty === 0) return;
+
+                    const amount = qty * parseNumeric(row['ราคา/หน่วย']);
+                    const groupKey = getWorkGroupKey(row['หมวดหมู่'] || 'ไม่มีหมวดหมู่');
+                    amounts[groupKey] += amount;
+                    total += amount;
+                });
+
+                return {
+                    date: colName,
+                    dateObject: parseDateString(colName),
+                    amounts,
+                    total
+                };
+            })
+            .filter(row => row.dateObject && row.total !== 0)
+            .sort((a, b) => a.dateObject - b.dateObject);
+        }
+
+        function renderWorkGroupReport(data) {
+            const summary = buildWorkGroupSummary(data);
+            const totalSales = summary.reduce((sum, group) => sum + group.amount, 0);
+            const totalQty = summary.reduce((sum, group) => sum + group.qty, 0);
+            const topGroup = [...summary].sort((a, b) => b.amount - a.amount)[0];
+
+            document.getElementById('kpi-workgroup-total-sales').innerText = formatMoney(totalSales).replace('฿', '');
+            document.getElementById('kpi-workgroup-total-qty').innerText = formatNumber(totalQty);
+            document.getElementById('kpi-workgroup-top').innerText = topGroup && topGroup.amount !== 0 ? topGroup.label : '-';
+            document.getElementById('workgroup-period-label').innerText = `ช่วงเวลา: ${getDateFilterLabel()}`;
+
+            const summaryBody = document.getElementById('workgroup-period-summary-body');
+            summaryBody.innerHTML = '';
+            summary.forEach((group, index) => {
+                const ratio = totalSales !== 0 ? ((group.amount / totalSales) * 100).toFixed(1) : '0.0';
+                summaryBody.innerHTML += `
+                    <tr class="border-b border-slate-100 ${index % 2 === 1 ? 'bg-slate-50' : 'bg-white'}">
+                        <td class="px-6 py-4 font-medium text-slate-800">
+                            <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color:${group.color}"></span>${escapeHtml(group.label)}
+                        </td>
+                        <td class="px-6 py-4 text-right">${formatNumber(group.qty)}</td>
+                        <td class="px-6 py-4 text-right font-semibold text-slate-800">${formatMoney(group.amount).replace('฿', '')}</td>
+                        <td class="px-6 py-4 text-right"><span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold">${ratio}%</span></td>
+                    </tr>
+                `;
+            });
+
+            const dailyRows = buildWorkGroupDailyRows();
+            const dailyBody = document.getElementById('workgroup-period-daily-body');
+            dailyBody.innerHTML = '';
+
+            if (dailyRows.length === 0) {
+                dailyBody.innerHTML = `<tr><td colspan="7" class="px-6 py-10 text-center text-slate-500">ไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก</td></tr>`;
+            } else {
+                dailyRows.forEach(row => {
+                    dailyBody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">${escapeHtml(row.date)}</td>
+                            ${workGroupDefinitions.map(group => `<td class="px-4 py-3 text-right">${formatMoney(row.amounts[group.key]).replace('฿', '')}</td>`).join('')}
+                            <td class="px-4 py-3 text-right font-bold text-slate-900">${formatMoney(row.total).replace('฿', '')}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            if (workGroupChartInstance) workGroupChartInstance.destroy();
+            const ctx = document.getElementById('workGroupPeriodChart').getContext('2d');
+            workGroupChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dailyRows.map(row => row.date),
+                    datasets: workGroupDefinitions.map(group => ({
+                        label: group.shortLabel,
+                        data: dailyRows.map(row => row.amounts[group.key]),
+                        backgroundColor: group.color,
+                        borderWidth: 0
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: "'Prompt', sans-serif" } } },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.dataset.label}: ${formatMoney(context.parsed.y)}`
+                            }
+                        }
+                    },
+                    animation: { duration: 0 },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { font: { family: "'Prompt', sans-serif" } } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: "'Prompt', sans-serif" } } }
+                    }
+                }
             });
         }
 
@@ -1798,7 +2018,7 @@
                 details.push(`<span><strong>Top 10:</strong> ${escapeHtml(top10Category)} / ${escapeHtml(top10Metric)}</span>`);
                 details.push(`<span><strong>จุดสั่งซื้อ:</strong> ≤ ${escapeHtml(document.getElementById('stock-threshold').value)} ชิ้น</span>`);
                 details.push(`<span><strong>เงื่อนไขสต็อก:</strong> ไม่รวมหมวด 4, 7, 8, 9, 10 และ non-stock</span>`);
-            } else if (reportId === 'category' || reportId === 'top10') {
+            } else if (reportId === 'category' || reportId === 'group' || reportId === 'trend' || reportId === 'top10') {
                 details.unshift(`<span><strong>ช่วงข้อมูลยอดขาย:</strong> ${escapeHtml(getDateFilterLabel())}</span>`);
                 details.push(`<span><strong>ช่วงข้อมูลในไฟล์:</strong> ${escapeHtml(salesPeriod)}</span>`);
             } else {
@@ -1845,6 +2065,7 @@
                 requestAnimationFrame(() => {
                     if (printAll) {
                         if (categoryChartInstance?.resize) categoryChartInstance.resize();
+                        if (workGroupChartInstance?.resize) workGroupChartInstance.resize();
                         if (top10ChartInstance?.resize) top10ChartInstance.resize();
                         if (trendChartInstance?.resize) trendChartInstance.resize();
                     }
