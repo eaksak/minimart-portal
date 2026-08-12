@@ -29,20 +29,33 @@ var SPREADSHEET_ID_PROPERTY = "SILOM_SPREADSHEET_ID";
 /**
  * Public read-only endpoint. It never imports files or writes to Drive/Sheets.
  */
-function doGet() {
+function doGet(e) {
   var response = {};
   
   try {
-    var dataObj = getMasterSalesData();
-    response = {
-      status: "success",
-      mode: "read-only",
-      data: dataObj.data,
-      dateColumns: dataObj.dateColumns
-    };
+    var action = (e && e.parameter && e.parameter.action) || "salesData";
+
+    if (action === "dailySummary") {
+      var requestedDate = normalizeDateKey_(e.parameter.date);
+      if (!requestedDate) {
+        var dateError = new Error("Missing or invalid 'date' parameter. Use YYYY-MM-DD.");
+        dateError.code = "INVALID_DATE";
+        throw dateError;
+      }
+      response = getDailySummaryResponse_(requestedDate);
+    } else {
+      var dataObj = getMasterSalesData();
+      response = {
+        status: "success",
+        mode: "read-only",
+        data: dataObj.data,
+        dateColumns: dataObj.dateColumns
+      };
+    }
   } catch (err) {
     response = {
       status: "error",
+      code: err.code || "REQUEST_FAILED",
       message: err.toString()
     };
   }
@@ -50,6 +63,121 @@ function doGet() {
   return ContentService.createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+function getDailySummaryResponse_(requestedDate) {
+  var dataObj = getMasterSalesData();
+  var dateColumn = "";
+
+  for (var i = 0; i < dataObj.dateColumns.length; i++) {
+    if (normalizeDateKey_(dataObj.dateColumns[i]) === requestedDate) {
+      dateColumn = dataObj.dateColumns[i];
+      break;
+    }
+  }
+
+  if (!dateColumn) {
+    var notFoundError = new Error("No Silom sales data found for " + requestedDate);
+    notFoundError.code = "DATE_NOT_FOUND";
+    throw notFoundError;
+  }
+
+  var revenueData = {
+    REV_COOP_SALES: 0,
+    REV_CANTEEN_RICE: 0,
+    REV_BAKERY_CONSIGN: 0,
+    REV_CONSIGNMENT: 0,
+    REV_UNIFORM: 0
+  };
+
+  dataObj.data.forEach(function(item) {
+    var qty = Number(item[dateColumn]) || 0;
+    if (qty === 0) return;
+
+    var amount = qty * (Number(item["ราคา/หน่วย"]) || 0);
+    var categoryNumber = getSilomCategoryNumber_(item["หมวดหมู่"]);
+
+    if (categoryNumber === 4) {
+      revenueData.REV_CANTEEN_RICE += amount;
+    } else if (categoryNumber === 8) {
+      revenueData.REV_BAKERY_CONSIGN += amount;
+    } else if (categoryNumber === 9) {
+      revenueData.REV_CONSIGNMENT += amount;
+    } else if (categoryNumber === 10) {
+      revenueData.REV_UNIFORM += amount;
+    } else {
+      revenueData.REV_COOP_SALES += amount;
+    }
+  });
+
+  Object.keys(revenueData).forEach(function(key) {
+    revenueData[key] = Math.round(revenueData[key] * 100) / 100;
+  });
+
+  var total = Object.keys(revenueData).reduce(function(sum, key) {
+    return sum + revenueData[key];
+  }, 0);
+
+  return {
+    status: "success",
+    mode: "read-only",
+    date: requestedDate,
+    sourceDateColumn: dateColumn,
+    data: revenueData,
+    total: Math.round(total * 100) / 100,
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function normalizeDateKey_(value) {
+  if (!value) return "";
+
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return "";
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+
+  var text = String(value).trim();
+  var isoMatch = text.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+  var day;
+  var month;
+  var year;
+
+  if (isoMatch) {
+    year = Number(isoMatch[1]);
+    month = Number(isoMatch[2]);
+    day = Number(isoMatch[3]);
+  } else {
+    var dmyMatch = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if (!dmyMatch) return "";
+    day = Number(dmyMatch[1]);
+    month = Number(dmyMatch[2]);
+    year = Number(dmyMatch[3]);
+    if (year < 100) year += 2000;
+    if (year > 2400) year -= 543;
+  }
+
+  var parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) return "";
+
+  return String(year) + "-" + pad2_(month) + "-" + pad2_(day);
+}
+
+function pad2_(value) {
+  return value < 10 ? "0" + value : String(value);
+}
+
+function getSilomCategoryNumber_(category) {
+  var value = String(category || "").trim();
+  if (/^A[_\s-]*เครื่องแบบเครื่องหมาย/i.test(value)) return 10;
+  if (/^Uncategory$/i.test(value) || value === "ไม่มีหมวดหมู่") return 11;
+  var numericPrefix = value.match(/^(\d+)/);
+  return numericPrefix ? Number(numericPrefix[1]) : 11;
+}
+
 
 /**
  * Reject public write requests. Uploads must go through the protected Drive folder.
